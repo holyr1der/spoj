@@ -51,17 +51,6 @@ U TT[][33] = {
 U combs(U n, U k){
     if (n < k) return 0;
     return TT[n][k];
-    U ix = n * (n - 1) / 2 + k - 1;
-    if (k == 0) return 1;
-    if (k == n) return 1;
-    if (n < k) return 0;
-    if (T[ix]){
-        return T[ix];
-    }
-    else {
-        T[ix] = combs(n - 1, k - 1) + combs(n - 1, k);
-        return T[ix];
-    }
 }
 
 U msb(U x){
