@@ -64,20 +64,6 @@ U combs(U n, U k){
     }
 }
 
-U combs2(int n, int k){
-    U i, res = 1;
-    if (n == k){ res = 1; goto end;}
-    if (n < k) {res = 0; goto end;}
-    for (i = k + 1; i <= n; ++i){
-        res *= i;
-    }
-    for (i = 2; i < n - k + 1; ++i){
-        res /= i;
-    }end:
-    printf("C(%d, %d) = %u\n", n, k, res);
-    return res;
-}
-
 U msb(U x){
     if (x == 0) return 0;
     return 32 - __builtin_clz(x);
@@ -100,7 +86,6 @@ U process_l(U l){
         for (j = 0;j <= i; ++j){
             n = combs(i, j);
             cpb[j + bi + 1] += n;
-            //res += n;
         }
         --i;
     }
@@ -110,12 +95,9 @@ U process_l(U l){
 U process_range(U l, U u){
     U res = 0, i, j, n;
     for (i = msb(l) + 1;i < msb(u); ++i){
-        //cpb[1] += 1;
-        //res += 1;
         for (j = 0; j <= i - 1; ++j){
             n = combs(i - 1, j);
             cpb[j + 1] += n;
-            //res += n;
         }
     }
     return res;
@@ -133,7 +115,6 @@ U process_u(U u){
         for (j = 0;j <= i; ++j){
             n = combs(i, j);
             cpb[j + bi] += n;
-            //res += n;
         }
         --i;
         ++bi;
@@ -154,7 +135,6 @@ U process_lu2(U l, U u){
             for (j = 0;j <= i; ++j){
                 n = combs(i, j);
                 cpb[j + bi + 1] += n;
-                //res += n;
             }
         }
         --i;
@@ -199,14 +179,7 @@ U lown(U l, U n){
                 }
             }
             l |= 1<<i;
-            c = (i - c);// - (bs - n + 1);
-            //--i;
-            /*
-            while (c){
-                if (l&(1<<i)) l &= ~(1<<i), --c;
-                --i;
-            }
-            */
+            c = (i - c);
             l &= ~((1<<i)-1);
             l |= (1<<c) - 1;
             res = l;
@@ -251,7 +224,6 @@ U find(U n, U k){
         }
         while ((tmp = combs(i, k)) <= n) ++i;
         res |= 1<<(i - 1);
-        //printf("found: %u\n", i-1);
         n -= combs(i - 1, k);
         --k;
     }end:
@@ -303,7 +275,6 @@ int bs(const void * x, const void * y){
 }
 char c[32];
 char* tobin(U n){
-    //char c[32];
     int i;
     for (i = 0;i < 32;++i){
         c[31-i] = (n&1)?'1':'0';
@@ -345,7 +316,6 @@ void test(U l, U u, U k){
         printf("FAILED!!\n");
         exit(0);
     }
-    //print();
 }
 
 U conv(int n){
@@ -382,39 +352,13 @@ int main(){
             l = ll;
             u = uu;
         }
-        //test(l, u, k);
         res = solve(l, u, k);
         if (convert){
             res = rconv(res);
         }
-        //printf("%d %d %d\n", l, u, res);
-        //itoa(res, buf, 10);
-        //sprintf(buf, "%d", res);
-        //puts(buf);
         printf("%d\n", res);
         convert = 0;
     }
-    //for (i = 0;i < 9;++i){
-    //    printf("%d %d\n", a[i], countbit(a[i]));
-    //}
-    /*
-    printf("%d \n", process_l(39));
-    print();
-    printf("%d \n", process_range(39, 163));
-    print();
-    printf("%d \n", process_u(163));
-    print();
-//    printf("17] %d %d \n", a[16], getn(17));
-    printf("lown(3) %d  \n", lown(39, 3));
-    printf("placel(41) %d  \n", placel(41));
-    printf("placel(331) %d  \n", placel(331));
-    printf("find(13) %d  \n", find(13, 3));
-    printf("find(72) %d  \n", find(72, 5));
-    //memset(cpb, 0, 32 * sizeof(U));
-    int k = 17;
-    int n = getn(&k);
-    printf("F (39, 63, 3) = %d  \n", find(k + placel(lown(39, n)) - 1, n));
-    */
     
 #ifdef TEST
     test(36915, 47793, 7213);
@@ -434,18 +378,6 @@ int main(){
         test(l, u, k);
     }
 #endif
-    //return 0;
-/*
-    U j;
-    for (i = 0;i < 33;++i){
-        printf("{");
-        for (j = 0;j <= i;++j){
-            printf("%u, ", combs(i, j));
-        }
-        printf("},");
-    }
-
-*/
 }
 
 
