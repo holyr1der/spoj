@@ -137,7 +137,7 @@ U process_u(U u){
 }
 
 //Count the numbers in range [l, u], when l and u have the same leftmost bit set,
-//having i bits set for i in range [0, msb(r)]
+//having i bits set for i in range [0, msb(l)]
 U process_lu(U l, U u){
     U i;
     process_l(l); //count the numbers in [l, 2^msb(l))
@@ -148,10 +148,12 @@ U process_lu(U l, U u){
         counts[i] *= -1;
 }
 
-U getn(U *k){
-    U res = 0;
-    while (counts[res] < *k) *k -= counts[res++];
-    return res;
+//Find the number of set bits the number at pos position should have, and
+//its relative position in the ordered set of k-combinations
+U rel_pos(U *pos){
+    U k = 0;
+    while (counts[res] < *pos) *pos -= counts[res++];
+    return k;
 }
 
 //The smallest number having n bits set that is greater than l
@@ -249,7 +251,7 @@ U solve(U l, U u, U k){
     else {
         process_lu(l, u);
     }
-    U n = getn(&k);
+    U n = rel_pos(&k);
     U low = lown(l, n);
     U p = placel(low);
 #ifdef DEBUG
