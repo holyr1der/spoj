@@ -152,7 +152,7 @@ U process_lu(U l, U u){
 //its relative position in the ordered set of k-combinations
 U rel_pos(U *pos){
     U k = 0;
-    while (counts[res] < *pos) *pos -= counts[res++];
+    while (counts[k] < *pos) *pos -= counts[k++];
     return k;
 }
 
