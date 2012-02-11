@@ -10,9 +10,11 @@
 
 typedef unsigned int U;
 
-U cpb[33];
-U T[1512];
-U TT[][33] = {
+//counts[i]: the count of numbers in the given range having i bits set
+U counts[33];
+
+//Precomputed table of combinations C(n,k) for 0 <= k <= n < 33
+U _C[][33] = {
     {1, },
     {1, 1, },
     {1, 2, 1, },
@@ -48,11 +50,13 @@ U TT[][33] = {
     {1, 32, 496, 4960, 35960, 201376, 906192, 3365856, 10518300, 28048800, 64512240, 129024480, 225792840, 347373600, 471435600, 565722720, 601080390, 565722720, 471435600, 347373600, 225792840, 129024480, 64512240, 28048800, 10518300, 3365856, 906192, 201376, 35960, 4960, 496, 32, 1, }
    };
 
-U combs(U n, U k){
+//Combinations C(n, k)
+U C(U n, U k){
     if (n < k) return 0;
-    return TT[n][k];
+    return _C[n][k];
 }
 
+//Offset of leftmost bit set
 U msb(U x){
     if (x == 0) return 0;
     return 32 - __builtin_clz(x);
@@ -63,47 +67,68 @@ U msb(U x){
     return i;
 }
 
+//Count the numbers in range [l, 2^msb(l)-1] having i bits set
+//for i in range [0, msb(l)]
 U process_l(U l){
-    U bs = countbit(l), res = 1, bi, j;
-    U m = msb(l), n;
-    cpb[bs] += 1;
-    int i = m - 1;
+    U bs, m, n, res , bi, j;
+
+    res = 1;
+    bs = countbit(l);
+    //m = msb(l);
+    counts[bs] += 1;
+
+    int i = msb(l) - 1;
     bi = 0;
     for (;;){
-        while (l&(1<<i) && i >= 0) --i, ++bi;
+        while (l&(1<<i) && i >= 0) // find next 0 bit on right
+            --i,
+            ++bi; //bits set in left of i (inclusive)
         if (i < 0) break;
+        //bit at i is 0 eg., and bi bits are set in left of i
+        //...01110....
+        //-------^-----
+        //assume bit at i is set
+        //now there are C(i, j) numbers for any j, 0 <= j <= i
+        //that are greater than l and have bi + 1 + j bits set
         for (j = 0;j <= i; ++j){
-            n = combs(i, j);
-            cpb[j + bi + 1] += n;
+            n = C(i, j);
+            counts[j + bi + 1] += n;
+#ifdef DEBUG
+            res += n;
+#endif
         }
         --i;
     }
     return res;
 }
 
+//Count the numbers in range [2^(msb(l)+1), (2^(msb(r)-1))-1] having i bits set
+//for i in range [0, msb(r) - 1]
 U process_range(U l, U u){
     U res = 0, i, j, n;
     for (i = msb(l) + 1;i < msb(u); ++i){
-        for (j = 0; j <= i - 1; ++j){
-            n = combs(i - 1, j);
-            cpb[j + 1] += n;
+        for (j = 0; j < i; ++j){
+            n = C(i - 1, j);
+            counts[j + 1] += n;
         }
     }
     return res;
 }
 
+//Count the numbers in range [2^(msb(r)-1), r] having i bits set
+//for i in range [0, msb(r)]
 U process_u(U u){
     U bs = countbit(u), res = 1, bi, j;
     U m = msb(u), n;
-    cpb[bs] += 1;
+    counts[bs] += 1;
     int i = m - 2;
     bi = 1;
     for (;;){
         while (!(u&(1<<i)) && i >= 0) --i;
         if (i < 0) break;
         for (j = 0;j <= i; ++j){
-            n = combs(i, j);
-            cpb[j + bi] += n;
+            n = C(i, j);
+            counts[j + bi] += n;
         }
         --i;
         ++bi;
@@ -111,42 +136,25 @@ U process_u(U u){
     return res;
 }
 
-U process_lu2(U l, U u){
-    U bs = countbit(l), res = 1, bi, j;
-    U m = msb(l), n;
-    cpb[bs] += 1;
-    int i = m - 1;
-    bi = 0;
-    for (;;){
-        while (l&(1<<i) && i >= 0) --i, ++bi;
-        if (i < 0) break;
-        if (((l|(1<<i))&~((1<<i)-1)) < u){
-            for (j = 0;j <= i; ++j){
-                n = combs(i, j);
-                cpb[j + bi + 1] += n;
-            }
-        }
-        --i;
-    }
-    return res;
-}
-
+//Count the numbers in range [l, u], when l and u have the same leftmost bit set,
+//having i bits set for i in range [0, msb(r)]
 U process_lu(U l, U u){
-    process_l(l);
     U i;
-    for (i = 0;i < 33;++i)
-        cpb[i] *= -1;
-    process_l(u+1);
-    for (i = 0;i < 33;++i)
-        cpb[i] *= -1;
+    process_l(l); //count the numbers in [l, 2^msb(l))
+    for (i = 0;i < 33;++i) //negate the counts
+        counts[i] *= -1;
+    process_l(u+1); //now this will subtract the counts in range (r, 2^msb(l))
+    for (i = 0;i < 33;++i) //restore the counts
+        counts[i] *= -1;
 }
 
 U getn(U *k){
     U res = 0;
-    while (cpb[res] < *k) *k -= cpb[res++];
+    while (counts[res] < *k) *k -= counts[res++];
     return res;
 }
 
+//The smallest number having n bits set that is greater than l
 U lown(U l, U n){
     U bs = countbit(l), m = msb(l);
     U res;
@@ -189,11 +197,13 @@ U lown(U l, U n){
     return res;
 }
 
+//The index of n in the ordered set of k-combinations where
+//k the bits set in n
 U placel(U n){
     U res = 0, i, x = 1;
     for (i = 0;n; ++i){
         if (n&1){
-            res += combs(i, x);
+            res += C(i, x);
             ++x;
         }
         n >>= 1;
@@ -201,6 +211,7 @@ U placel(U n){
     return res;
 }
 
+//The number corresponding to position n in the ordered set of k-combinations
 U find(U n, U k){
     U i = 0, tmp, res = 0;
     while (k){
@@ -211,9 +222,9 @@ U find(U n, U k){
             }
             goto end;
         }
-        while ((tmp = combs(i, k)) <= n) ++i;
+        while ((tmp = C(i, k)) <= n) ++i;
         res |= 1<<(i - 1);
-        n -= combs(i - 1, k);
+        n -= C(i - 1, k);
         --k;
     }end:
     return res;
@@ -222,7 +233,7 @@ U find(U n, U k){
 void print(){
     U i;
     for (i = 0;i < 33;++i){
-        printf("%u: %u\n", i, cpb[i]);
+        printf("%u: %u\n", i, counts[i]);
     }
 }
 
@@ -248,6 +259,7 @@ U solve(U l, U u, U k){
     return find(k + p - 1, n);//find(k + placel(lown(l, n)) - 1, n);
 }
 
+//Bits set in a
 int countbit(U a){
     int c;
     for (c = 0;a; c++)
@@ -262,15 +274,6 @@ int bs(const void * x, const void * y){
         return (int)*a - (int)*b;
     return n1 - n2;
 }
-char c[32];
-char* tobin(U n){
-    int i;
-    for (i = 0;i < 32;++i){
-        c[31-i] = (n&1)?'1':'0';
-        n >>= 1;
-    }
-    return c;
-}
 
 U solveBF(U l, U u, U k){
     U i;
@@ -279,25 +282,17 @@ U solveBF(U l, U u, U k){
         a[i-l] = i;
     }
     qsort(a, u - l + 1, sizeof(U), bs);
-#ifdef DEBUG2
-    U tmp[33];
-    memset(tmp, 0, sizeof(U) * 33);
-    for (i = 0;i < u - l + 1;++i)
-        tmp[countbit(a[i])] += 1;
-    for (i = 0;i < 33;++i)
-        printf("%d: %d\n", i, tmp[i]);
-#endif
     return a[k-1];
 }
 
 void reset(){
-    memset(cpb, 0, sizeof(U) * 32);
+    memset(counts, 0, sizeof(U) * 32);
 }
 
 void test(U l, U u, U k){
     reset();
     U r1, r2;
-    //print();
+
     r1 = solve(l, u, k);
     r2 = solveBF(l, u, k);
     printf("%u %u %u\nsolve: %u \nBF   : %u\n", l, u, k, r1, r2);
@@ -348,7 +343,7 @@ int main(){
         printf("%d\n", res);
         convert = 0;
     }
-    
+
 #ifdef TEST
     test(36915, 47793, 7213);
     test(39, 163, 117);
@@ -358,7 +353,7 @@ int main(){
     test(0, 16, 11);
     test(1000,10000,80);
     test(1024,65536,8);
-    for (;;){
+    for (i = 0;i < 100;++i){
         U t;
         l = rand()%100000;
         u = rand()%100000;
