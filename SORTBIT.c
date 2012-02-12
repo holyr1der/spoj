@@ -272,6 +272,7 @@ char* tobin(U n){
     return c;
 }
 
+//Bruteforce solution for testing.
 U solveBF(U l, U u, U k){
     U i;
     U *a = (U*)malloc(sizeof(U) * (u - l + 1));
