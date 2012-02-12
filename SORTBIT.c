@@ -112,6 +112,7 @@ U msb(U x)
 //Bits set in a
 int countbit(U a)
 {
+    return __builtin_popcount(a);
     int c;
     for (c = 0; a; c++)
         a &= a - 1;
