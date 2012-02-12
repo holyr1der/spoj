@@ -292,7 +292,7 @@ U solveBF(U l, U u, U k){
 }
 
 void reset(){
-    memset(cpb, 0, sizeof(U) * 32);
+    memset(cpb, 0, sizeof(U) * 33);
 }
 
 void test(U l, U u, U k){
