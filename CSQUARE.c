@@ -10,6 +10,7 @@ int main()
     U t, a, b, m, res, m1, m2, n;
     long long i;
     char out[355000];
+
     memset(out, 32, 355000);
     fgets(buf, sizeof (buf), stdin);
     sscanf(buf, "%llu", &t);
@@ -53,27 +54,22 @@ int main()
 #ifdef ASM
                 asm volatile 
                     (
-                     //"movb (%2,%3), %%al\n\t"
                      "cmpb $49, (%2,%3)\n\t"
                      "jz .one\n\t"
                      "jl .zero\n\t"
-                     //"addb $1, (%2, %3)\n\t"
                      "movq %0, %%rax\n\t"
                      "xorl %%edx, %%edx\n\t"
                      "imulq %0, %%rax\n\t"
                      "imulq %1, %%rax\n\t"
                      "divq %6\n\t"
                      "movq %%rdx, %1\n\t"
-                     //"movq $81, %1\n\t"
                      "jmp .zero\n\t"
                      ".one:\n\t"
-                     //"addb $3, (%2, %3)\n\t"
                      "movq %0, %%rax\n\t"
                      "xorl %%edx, %%edx\n\t"
                      "imulq %1, %%rax\n\t"
                      "divq %6\n\t"
                      "movq %%rdx, %1\n\t"
-                     //"movq $31, %1\n\t"
                      ".zero:\n\t"
                      "movq %0, %%rax\n\t"
                      "xorl %%edx, %%edx\n\t"
@@ -87,7 +83,6 @@ int main()
                     );
 #else
                 //printf("m1:= %llu,  res:= %llu,  k[%lld] = %c.\n",m1, res,  i, k[i]);
-
                 switch (k[i]){
                     case '2':
                         res = (res * m1 * m1) % m;break;
