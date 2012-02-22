@@ -6,12 +6,13 @@
 
 #define ORDER 12 
 #define SIZE ((1<<ORDER)+1)
+#define AQUEUE_SIZE 1000000
 
 #define real double
 
 char H[12][SIZE+2][SIZE+2];
 
-int counts[13] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+int counts[12] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
 
 int I;
 int J;
@@ -158,6 +159,71 @@ int is_empty(Queue *q)
     return q->head->prev == q->tail;
 }
 
+//=================Array Queue ================
+typedef struct AQueue AQueue;
+
+//Data AQ_buf[AQUEUE_SIZE];
+AQueue *AQ;
+
+struct AQueue {
+    int head;
+    int tail;
+    Data buf[AQUEUE_SIZE];
+};
+
+void AQ_reset()
+{
+    AQ->head = 0;
+    AQ->tail = 0;
+}
+
+void AQ_make()
+{
+    AQ = malloc(sizeof (AQueue));
+    AQ_reset();
+}
+
+int AQ_is_empty()
+{
+    return AQ->head == AQ->tail;
+}
+
+void AQ_push_back(Data data)
+{
+    AQ->buf[AQ->tail++%AQUEUE_SIZE] = data;
+    if (AQ->tail == AQ->head){
+        printf("Array Queue out of space!\n");
+        exit(1);
+    }
+}
+
+Data AQ_pop_front()
+{
+    return AQ->buf[AQ->head++%AQUEUE_SIZE];
+}
+
+void AQ_test()
+{
+    Data d = {0.8,45, 3};
+    Data d1;
+    Data d3={2.2,45,0};
+    AQ_push_back(d);
+    AQ_push_back(d3);
+    d1 = AQ_pop_front();
+    AQ_push_back(d);
+    printf("%f %d %d\n", d1.wlevel, d1.i, d1.j);
+    d1 = AQ_pop_front();
+    printf("%f %d %d\n", d1.wlevel, d1.i, d1.j);
+    d1 = AQ_pop_front();
+    printf("%f %d %d\n", d1.wlevel, d1.i, d1.j);
+    d1 = AQ_pop_front();
+    printf("%f %d %d\n", d1.wlevel, d1.i, d1.j);
+    d1 = AQ_pop_front();
+
+}
+
+//==========Array Queue ==================
+
 real calc_area(real wlevel, real y0, real y1, real y2, real y3)
 {
     real l, h;
@@ -197,11 +263,14 @@ real do_bfs(int x, real y0, real y1, real y2, real y3)
     data.i = 1;
     data.j = x;
 
-    q = make_queue();
-    push_back(q, data);
+    //q = make_queue();
+    //push_back(q, data);
+    AQ_push_back(data);
 
-    while (!is_empty(q)){
-        data = pop_front(q);
+    while (!AQ_is_empty()){
+    //while (!is_empty(q)){
+        //data = pop_front(q);
+        data = AQ_pop_front();
         wlevel = data.wlevel;
         i = data.i;
         j = data.j;
@@ -220,7 +289,8 @@ real do_bfs(int x, real y0, real y1, real y2, real y3)
                 data.i = i - 1;
                 data.j = j;
                 data.wlevel = wlevel - y1;
-                push_back(q, data);
+                //push_back(q, data);
+                AQ_push_back(data);
             }
         }
         if (H[N][i][j+1] != COUNT && H[N][i][j+1] != 0){
@@ -228,7 +298,8 @@ real do_bfs(int x, real y0, real y1, real y2, real y3)
                 data.i = i;
                 data.j = j + 1;
                 data.wlevel = wlevel - y3;
-                push_back(q, data);
+                //push_back(q, data);
+                AQ_push_back(data);
             }
         }
         if (H[N][i+1][j] != COUNT && H[N][i+1][j] != 0){
@@ -239,7 +310,8 @@ real do_bfs(int x, real y0, real y1, real y2, real y3)
             } else {
                 data.wlevel = y2;
             }
-            push_back(q, data);
+            //push_back(q, data);
+            AQ_push_back(data);
         }
         if (H[N][i][j-1] != COUNT && H[N][i][j-1] != 0){
             data.i = i;
@@ -249,10 +321,12 @@ real do_bfs(int x, real y0, real y1, real y2, real y3)
             } else {
                 data.wlevel = y2;
             }
-            push_back(q, data);
+            //push_back(q, data);
+            AQ_push_back(data);
         }
     }
-    del_queue(q);
+    //del_queue(q);
+    AQ_reset();
     return total_area;
 }
 
@@ -313,6 +387,13 @@ int main(){
     int order, angle;
     real res;
 
+    AQ_make();
+    //AQ_test();
+#ifdef CALC_ALL
+    for (order = 1;order < 13;++order)
+        for (angle = 0;angle < 90;++angle)
+            printf("%.12f\n", solve(order, angle * M_PI / 180));
+#else
     while (fgets(buf, sizeof (buf), stdin)){
         sscanf(buf, "%d %d", &order, &angle);
 #ifndef USE_TABLE
@@ -322,6 +403,7 @@ int main(){
 #endif
         printf("%.12f\n", res);
     }
+#endif
     return 0;
 }
 
