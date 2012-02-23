@@ -3,7 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define EPS 0.004
+#define EPS 0.001
+#define NEWTON_EPS 0.01
+#define NEWTON_GUESS_EPS 1
 #define MAX_ITER 20
 #define D 0.0000001
 
@@ -35,15 +37,45 @@ double DF(double x){
     return NORTH_DIR * x / (sqrt(R2*R2 - x*x) + D) +
         SOUTH_DIR * (x - X) / (D + sqrt(R1*R1 - (X - x)*(X - x)));
 }
-/*
-double F2(double x){
-    return Y - sqrt(R2*R2 - x*x);
+
+double DDF(double x){
+    double R1_2, R2_2, S1, S2, result;
+
+    R1_2 = R1 * R1;
+    R2_2 = R2 * R2;
+    S1 = R1_2 - (x - X)*(x - X);
+    S2 = R2_2 - x * x;
+
+    result =  NORTH_DIR * R2_2 / (sqrt(S2) * S2 + D) + 
+        SOUTH_DIR * R1_2 / (sqrt(S1) * S1 + D);
+    /*
+    if (result == 0){
+        printf("%f %f %f %f %f %f\n",x,X,R1_2,R2_2,S1,S2);
+        exit(1);
+    }*/
+    return result;
 }
 
-double DF2(double x){
-    return x / (sqrt(R2*R2 - x*x) + D);
+double newton(double x0){
+    double x, dfx, ddfx;
+    int i = 0;
+
+    x = x0;
+    do {
+        x0 = x;
+        dfx = DF(x0);
+        ddfx = DDF(x0);
+        //if (fabs(dfx) < EPS)
+        //    break;
+        if (ddfx == 0)
+            return sqrt(-1);
+        x = x0 - dfx / ddfx;
+        ++i;
+    } while (fabs(dfx) > NEWTON_EPS);
+    printf("NEWTON ITERATIONS: %d\n", i);
+    return x;
 }
-*/
+
 double secant(double x0, double x1, ptrF f){
     double xn, f1, f0;
     f0 = f(x0);
@@ -67,17 +99,18 @@ double secant(double x0, double x1, ptrF f){
     return x1;
 }
 
-double bisect(double x, double xn, ptrF f){
+double bisect(double x, double xn, double eps){
     double m, y, yn, ym, err;
-    y = f(x);
-    yn = f(xn);
+    y = DF(x);
+    yn = DF(xn);
     int i = 0;
     do {
         m = (xn + x) / 2; 
-        ym = f(m);
+        ym = DF(m);
         //printf("%d: %.4f %.4f %.6f\n", i,  m, ym, (xn-x)*ym);
-        if (fabs(ym * (xn - x))  < EPS){
-            return m;
+        //if (fabs(ym * (xn - x))  < eps){
+        if (fabs(xn - x) < eps){
+            break;
         }
         if ((ym * y) < 0){
             xn = m;
@@ -89,6 +122,7 @@ double bisect(double x, double xn, ptrF f){
         }
         ++i;
     } while (1);//i < MAX_ITER);
+    printf("BISECT ITERATIONS: %d\n", i);
     return m;
 }
 
@@ -158,8 +192,13 @@ double solve(Semi *north, Semi *south, unsigned int north_cnt, unsigned int sout
         xn -= south_b + R2;
         NORTH_DIR = n->dir == NORTH?-1:1;
         SOUTH_DIR = s->dir == SOUTH?-1:1;
-        x0 = bisect(x, xn, DF);
+        x0 = bisect(x, xn, EPS);
         tmp = F(x0);
+        double newt = newton(bisect(x, xn, NEWTON_GUESS_EPS));
+        printf("bisect: %.6f\nnewton: %.6f\n",x0, newt);
+        printf("val -> b: %.6f  s: %.6f\n",F(x0), F(newt));
+        printf("der -> b: %.6f  s: %.6f\n",DF(x0), DF(newt));
+
         /*double sec = secant(x + (xn - x)/2., x +  (xn - x) / 3., DF);
         printf("bisect: %.6f\nsecant: %.6f\n",x0, sec);
         printf("val -> b: %.6f  s: %.6f\n",F(x0), F(sec));
@@ -229,7 +268,7 @@ void test(){
         printf("%.2f:  %.4f  %.4f\n", x, F(x), DF(x));
     }
 
-    printf("bisect DF: %.4f\n",bisect(-3, 0, DF));
+    printf("bisect DF: %.4f\n",bisect(-3, 0, EPS));
 }
 
 int main(){
