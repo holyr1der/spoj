@@ -10,6 +10,8 @@
 
 #define real double
 
+#define WALL -1
+
 char H[12][SIZE + 2][SIZE + 2];
 
 int counts[12] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
@@ -50,16 +52,16 @@ void set()
 {
     switch (A) {
     case 0:
-        H[N][I][J] = 0;
+        H[N][I][J] = WALL;
         break;
     case 1:
-        H[N][I][J - 1] = 0;
+        H[N][I][J - 1] = WALL;
         break;
     case 2:
-        H[N][I - 1][J - 1] = 0;
+        H[N][I - 1][J - 1] = WALL;
         break;
     case 3:
-        H[N][I - 1][J] = 0;
+        H[N][I - 1][J] = WALL;
         break;
     }
 }
@@ -92,13 +94,13 @@ void printH(int order)
     for (i = 0; i < n + 1; ++i) {
         for (j = 0; j < n + 1; ++j) {
             if (i == 0 || i == n || j == 0 || j == n) {
-                printf("#");
+                printf("###");
                 continue;
             }
-            if (H[N][i][j] == 0)
-                printf("#");
+            if (H[N][i][j] == WALL)
+                printf("###");
             else
-                printf(".", H[N][i][j]);
+                printf("%3d", H[N][i][j]);
         }
         printf("\n");
     }
@@ -240,34 +242,40 @@ void AQ_test()
 
 //==========Array Queue ==================
 
-real calc_area(real wlevel, real y0, real y1, real y2, real y3)
+real Y0;
+real Y1;
+real Y2;
+real Y3;
+real LOW_Y;
+real HIGH_Y;
+real TANF;
+real COTANF;
+
+real calc_area(real wlevel)//, real Y0, real Y1, real Y2, real Y3)
 {
-    real l, h;
     real d1, d2;
 
-    if (y3 == 0)
+    if (Y3 == 0)
         return wlevel;
-    l = y1 < y3 ? y1 : y3;
-    h = y1 < y3 ? y3 : y1;
-    if (wlevel < h) {
-        if (wlevel <= l) {
-            d1 = y3 / y1 * wlevel;
-            d2 = y1 / y3 * wlevel;
+    if (wlevel < HIGH_Y) {
+        if (wlevel <= LOW_Y) {
+            d1 = TANF * wlevel;
+            d2 = COTANF * wlevel;
             return (d1 + d2) * wlevel / 2;
         } else {
-            d1 = y3 / y1 * l;
-            d2 = y1 / y3 * l;
-            return (d1 + d2) * (wlevel - l / 2);
+            d1 = TANF * LOW_Y;
+            d2 = COTANF * LOW_Y;
+            return (d1 + d2) * (wlevel - LOW_Y / 2);
         }
     } else {
-        wlevel = y2 - wlevel;
-        d1 = y3 / y1 * wlevel;
-        d2 = y1 / y3 * wlevel;
+        wlevel = Y2 - wlevel;
+        d1 = Y3 / Y1 * wlevel;
+        d2 = Y1 / Y3 * wlevel;
         return 1 - (d1 + d2) * wlevel / 2;
     }
 }
 
-real do_bfs(int x, real y0, real y1, real y2, real y3)
+real do_bfs(int x)//, real Y0, real Y1, real Y2, real Y3)
 {
     Queue *q;
     Data data;
@@ -275,7 +283,7 @@ real do_bfs(int x, real y0, real y1, real y2, real y3)
     int i, j;
 
     total_area = 0;
-    data.wlevel = y1;
+    data.wlevel = Y1;
     data.i = 1;
     data.j = x;
 
@@ -297,45 +305,45 @@ real do_bfs(int x, real y0, real y1, real y2, real y3)
         }
 
         H[N][i][j] = COUNT;
-        real this_area = calc_area(wlevel, y0, y1, y2, y3);
+        real this_area = calc_area(wlevel);//, Y0, Y1, Y2, Y3);
         total_area += this_area;
 
-        if (H[N][i - 1][j] != COUNT && H[N][i - 1][j] != 0) {
-            if (wlevel > y1) {
+        if (H[N][i - 1][j] != COUNT && H[N][i - 1][j] != WALL) {
+            if (wlevel > Y1) {
                 data.i = i - 1;
                 data.j = j;
-                data.wlevel = wlevel - y1;
+                data.wlevel = wlevel - Y1;
                 //push_back(q, data);
                 AQ_push_back(data);
             }
         }
-        if (H[N][i][j + 1] != COUNT && H[N][i][j + 1] != 0) {
-            if (wlevel > y3) {
+        if (H[N][i][j + 1] != COUNT && H[N][i][j + 1] != WALL) {
+            if (wlevel > Y3) {
                 data.i = i;
                 data.j = j + 1;
-                data.wlevel = wlevel - y3;
+                data.wlevel = wlevel - Y3;
                 //push_back(q, data);
                 AQ_push_back(data);
             }
         }
-        if (H[N][i + 1][j] != COUNT && H[N][i + 1][j] != 0) {
+        if (H[N][i + 1][j] != COUNT && H[N][i + 1][j] != WALL) {
             data.i = i + 1;
             data.j = j;
-            if (wlevel < y3) {
-                data.wlevel = wlevel + y1;
+            if (wlevel < Y3) {
+                data.wlevel = wlevel + Y1;
             } else {
-                data.wlevel = y2;
+                data.wlevel = Y2;
             }
             //push_back(q, data);
             AQ_push_back(data);
         }
-        if (H[N][i][j - 1] != COUNT && H[N][i][j - 1] != 0) {
+        if (H[N][i][j - 1] != COUNT && H[N][i][j - 1] != WALL) {
             data.i = i;
             data.j = j - 1;
-            if (wlevel < y1) {
-                data.wlevel = wlevel + y3;
+            if (wlevel < Y1) {
+                data.wlevel = wlevel + Y3;
             } else {
-                data.wlevel = y2;
+                data.wlevel = Y2;
             }
             //push_back(q, data);
             AQ_push_back(data);
@@ -346,9 +354,218 @@ real do_bfs(int x, real y0, real y1, real y2, real y3)
     return total_area;
 }
 
+//======Depth First Search =============
+real do_dfs(int i, int j, real wlevel)
+{
+    real this_area = calc_area(wlevel);
+
+    //printf("%d, %d\n",i,j);
+    switch (H[N][i][j]){
+        case 1:
+            if (wlevel < Y1) {
+                this_area += do_dfs(i, j - 1, wlevel + Y3);
+            } else {
+                this_area += do_dfs(i, j - 1, Y2);
+            }
+            break;
+        case 2:
+            if (wlevel < Y3) {
+                this_area += do_dfs(i + 1, j, wlevel + Y1);
+            } else {
+                this_area += do_dfs(i + 1, j, Y2);
+            }
+            break;
+        case 3:
+            if (wlevel < Y1) {
+                this_area += do_dfs(i, j - 1, wlevel + Y3);
+            } else {
+                this_area += do_dfs(i, j - 1, Y2);
+            }
+            if (wlevel < Y3) {
+                this_area += do_dfs(i + 1, j, wlevel + Y1);
+            } else {
+                this_area += do_dfs(i + 1, j, Y2);
+            }
+            break;
+        case 4:
+            if (wlevel > Y3) {
+                this_area += do_dfs(i, j + 1, wlevel - Y3);
+            }
+            break;
+        case 5:
+            if (wlevel < Y1) {
+                this_area += do_dfs(i, j - 1, wlevel + Y3);
+            } else {
+                this_area += do_dfs(i, j - 1, Y2);
+            }
+            if (wlevel > Y3) {
+                this_area += do_dfs(i, j + 1, wlevel - Y3);
+            }
+            break;
+        case 6:
+            if (wlevel < Y3) {
+                this_area += do_dfs(i + 1, j, wlevel + Y1);
+            } else {
+                this_area += do_dfs(i + 1, j, Y2);
+            }
+            if (wlevel > Y3) {
+                this_area += do_dfs(i, j + 1, wlevel - Y3);
+            }
+            break;
+        case 7:
+            if (wlevel < Y1) {
+                this_area += do_dfs(i, j - 1, wlevel + Y3);
+            } else {
+                this_area += do_dfs(i, j - 1, Y2);
+            }
+            if (wlevel < Y3) {
+                this_area += do_dfs(i + 1, j, wlevel + Y1);
+            } else {
+                this_area += do_dfs(i + 1, j, Y2);
+            }
+            if (wlevel > Y3) {
+                this_area += do_dfs(i, j + 1, wlevel - Y3);
+            }
+            break;
+        case 8:
+            if (wlevel > Y1) {
+                this_area += do_dfs(i - 1, j, wlevel - Y1);
+            }
+            break;
+        case 9:
+            if (wlevel > Y1) {
+                this_area += do_dfs(i - 1, j, wlevel - Y1);
+            }
+            if (wlevel < Y1) {
+                this_area += do_dfs(i, j - 1, wlevel + Y3);
+            } else {
+                this_area += do_dfs(i, j - 1, Y2);
+            }
+            break;
+        case 10:
+            if (wlevel < Y3) {
+                this_area += do_dfs(i + 1, j, wlevel + Y1);
+            } else {
+                this_area += do_dfs(i + 1, j, Y2);
+            }
+            if (wlevel > Y1) {
+                this_area += do_dfs(i - 1, j, wlevel - Y1);
+            }
+            break;
+        case 11:
+            if (wlevel < Y1) {
+                this_area += do_dfs(i, j - 1, wlevel + Y3);
+            } else {
+                this_area += do_dfs(i, j - 1, Y2);
+            }
+            if (wlevel < Y3) {
+                this_area += do_dfs(i + 1, j, wlevel + Y1);
+            } else {
+                this_area += do_dfs(i + 1, j, Y2);
+            }
+            if (wlevel > Y1) {
+                this_area += do_dfs(i - 1, j, wlevel - Y1);
+            }
+            break;
+        case 12:
+            if (wlevel > Y3) {
+                this_area += do_dfs(i, j + 1, wlevel - Y3);
+            }
+            if (wlevel > Y1) {
+                this_area += do_dfs(i - 1, j, wlevel - Y1);
+            }
+            break;
+        case 13:
+            if (wlevel < Y1) {
+                this_area += do_dfs(i, j - 1, wlevel + Y3);
+            } else {
+                this_area += do_dfs(i, j - 1, Y2);
+            }
+            if (wlevel > Y3) {
+                this_area += do_dfs(i, j + 1, wlevel - Y3);
+            }
+            if (wlevel > Y1) {
+                this_area += do_dfs(i - 1, j, wlevel - Y1);
+            }
+            break;
+        case 14:
+            if (wlevel < Y3) {
+                this_area += do_dfs(i + 1, j, wlevel + Y1);
+            } else {
+                this_area += do_dfs(i + 1, j, Y2);
+            }
+            if (wlevel > Y3) {
+                this_area += do_dfs(i, j + 1, wlevel - Y3);
+            }
+            if (wlevel > Y1) {
+                this_area += do_dfs(i - 1, j, wlevel - Y1);
+            }
+            break;
+        default:
+            break;
+    }
+
+
+
+/*
+    H[N][i][j] = WALL;
+    if (H[N][i - 1][j] != WALL) {
+        if (wlevel > Y1) {
+            this_area += do_dfs(i - 1, j, wlevel - Y1);
+        }
+    }
+    if (H[N][i][j + 1] != WALL) {
+        if (wlevel > Y3) {
+            this_area += do_dfs(i, j + 1, wlevel - Y3);
+        }
+    }
+    if (H[N][i + 1][j] != WALL) {
+        if (wlevel < Y3) {
+            this_area += do_dfs(i + 1, j, wlevel + Y1);
+        } else {
+            this_area += do_dfs(i + 1, j, Y2);
+        }
+    }
+    if (H[N][i][j - 1] != WALL) {
+        if (wlevel < Y1) {
+            this_area += do_dfs(i, j - 1, wlevel + Y3);
+        } else {
+            this_area += do_dfs(i, j - 1, Y2);
+        }
+    }
+    H[N][i][j] = 1;
+*/
+    return this_area;
+}
+
+void prepare(int i, int j)
+{
+    char t = 0;// = (H[N][i - 1][j]<<3) | (H[N][i][j + 1]<<2) 
+        //| (H[N][i + 1][j]<<1) | (H[N][i][j - 1]);
+
+    H[N][i][j] = WALL;
+    if (H[N][i - 1][j] != WALL) {
+        t |= 8;
+        prepare(i - 1, j);
+    }
+    if (H[N][i][j + 1] != WALL) {
+        t |= 4;
+        prepare(i, j + 1);
+    }
+    if (H[N][i + 1][j] != WALL) {
+        t |= 2;
+        prepare(i + 1, j);
+    }
+    if (H[N][i][j - 1] != WALL) {
+        t |= 1;
+        prepare(i, j - 1);
+    }
+    H[N][i][j] = t;
+}
+
 real solve(int order, real angle)
 {
-    real ans, y0, y1, y2, y3;
+    real ans;//, y0, y1, y2, y3;
     int j, n;
 
     ans = 0;
@@ -363,20 +580,37 @@ real solve(int order, real angle)
         memset((char *) H[N], 1, (SIZE + 2) * (SIZE + 2));
         hilbert(order, 1);
         for (j = 0; j < n + 1; ++j)
-            H[N][0][j] = H[N][n + 1][j] = H[N][j][0] = H[N][j][n + 1] = 0;
+            H[N][0][j] = H[N][n + 1][j] = H[N][j][0] = H[N][j][n + 1] = WALL;
+#ifndef USE_BFS
+        for (j = 1; j < n; ++j) {
+            if (H[N][1][j] != WALL) {
+                prepare(1, j);
+            }
+        }
+#endif
     }
 
-    y0 = 0;
-    y1 = cos(angle);
-    y2 = sin(angle) + cos(angle);
-    y3 = sin(angle);
+    Y0 = 0;
+    Y1 = cos(angle);
+    Y2 = sin(angle) + cos(angle);
+    Y3 = sin(angle);
+    LOW_Y = Y1 < Y3 ? Y1 : Y3;
+    HIGH_Y = Y1 < Y3 ? Y3 : Y1;
+    TANF = Y1 / Y3;
+    COTANF = Y3 / Y1;
 
     counts[N]++;
     COUNT = counts[N];
 
+    //printH(order);
     for (j = 1; j < n; ++j) {
-        if (H[N][1][j] != COUNT && H[N][1][j] != 0) {
-            ans += do_bfs(j, y0, y1, y2, y3);
+#ifdef USE_BFS
+        if (H[N][1][j] != COUNT && H[N][1][j] != WALL) {
+            ans += do_bfs(j);//, y0, y1, y2, y3);
+#else
+        if (H[N][1][j] != WALL) {
+            ans += do_dfs(1, j, Y1);
+#endif
         }
     }
     return ans;
