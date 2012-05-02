@@ -35,15 +35,7 @@ double DF(double x){
     return NORTH_DIR * x / (sqrt(R2*R2 - x*x) + D) +
         SOUTH_DIR * (x - X) / (D + sqrt(R1*R1 - (X - x)*(X - x)));
 }
-/*
-double F2(double x){
-    return Y - sqrt(R2*R2 - x*x);
-}
 
-double DF2(double x){
-    return x / (sqrt(R2*R2 - x*x) + D);
-}
-*/
 double secant(double x0, double x1, ptrF f){
     double xn, f1, f0;
     f0 = f(x0);
@@ -75,7 +67,7 @@ double bisect(double x, double xn, ptrF f){
     do {
         m = (xn + x) / 2; 
         ym = f(m);
-        //printf("%d: %.4f %.4f %.6f\n", i,  m, ym, (xn-x)*ym);
+
         if (fabs(ym * (xn - x))  < EPS){
             return m;
         }
@@ -88,7 +80,7 @@ double bisect(double x, double xn, ptrF f){
             y = ym;
         }
         ++i;
-    } while (1);//i < MAX_ITER);
+    } while (1);
     return m;
 }
 
@@ -132,25 +124,7 @@ double solve(Semi *north, Semi *south, unsigned int north_cnt, unsigned int sout
 
         x = north_b > south_b?north_b:south_b;
         xn = y1 > y2?y2:y1;
-/*
-        if (n->dir == NORTH) {
-            R2 = s->radius;
-            X  = s->center;
-            x  -= south_b + R2;
-            xn -= south_b + R2;
-            x0 = bisect(x, xn, DF2);
-            tmp = F2(x0);
-        }
-        else if (s->dir == SOUTH) {
-            R2 = n->radius;
-            X  = n->center;
-            x  -= north_b + R2;
-            xn -= north_b + R2;
-            x0 = bisect(x, xn, DF2);
-            tmp = F2(x0);
-        }
-        else {
-*/
+
         R1 = n->radius;
         R2 = s->radius;
         X = north_b + R1 - south_b - R2;
@@ -160,14 +134,9 @@ double solve(Semi *north, Semi *south, unsigned int north_cnt, unsigned int sout
         SOUTH_DIR = s->dir == SOUTH?-1:1;
         x0 = bisect(x, xn, DF);
         tmp = F(x0);
-        /*double sec = secant(x + (xn - x)/2., x +  (xn - x) / 3., DF);
-        printf("bisect: %.6f\nsecant: %.6f\n",x0, sec);
-        printf("val -> b: %.6f  s: %.6f\n",F(x0), F(sec));
-        printf("der -> b: %.6f  s: %.6f\n",DF(x0), DF(sec));*/
-    //}
+
         if (tmp < min){
             min = tmp;
-            //minx = x0;
         }
 next:
         if (y1 == y2 
@@ -198,7 +167,6 @@ void parse(Semi *shore, unsigned int* shore_cnt){
 
     p = strtok(buf, " ");
     *shore_cnt = atoi(p);
-    //*shore = malloc(sizeof(Semi) * *shore_cnt);
 
     p = strtok(NULL, " ");
     if (*p == 'N')
@@ -250,10 +218,6 @@ int main(){
         parse(south, &south_cnt);
 
         printf("%.2f\n", solve(north, south, north_cnt, south_cnt, width));
-        //free(north);
-        //free(south);
     }
-    //printf("\n\n%.2f %.2f %.2f\n",1.4147, 1.415,1.416);
-    //test();
     return 0;
 }
